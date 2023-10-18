@@ -1,8 +1,11 @@
+import os
+
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from PIL import Image
-import os
+from transformers import AutoImageProcessor
+
 
 class CustomImageDataset(Dataset):
     def __init__(self, data_dir, mask_dir, transform=None, use_mask=True):
@@ -43,7 +46,7 @@ class CustomImageDataset(Dataset):
                 mask = None  # 如果不存在mask，则不需要处理
 
         if self.transform:
-            image = self.transform(image)
+            image = self.transform(image, return_tensors="pt")["pixel_values"][0]
 
         label = torch.tensor(label, dtype=torch.int64) 
 
@@ -60,10 +63,11 @@ class CustomImageDataset(Dataset):
 
 if __name__ == '__main__':
     # 定义图像的转换方法
-    transform = transforms.Compose([
-        transforms.Resize((128, 128)),  # The Image will transfer to 3*128*128
-        transforms.ToTensor(),
-    ])
+    # transform = transforms.Compose([
+    #     transforms.Resize((128, 128)),  # The Image will transfer to 3*128*128
+    #     transforms.ToTensor(),
+    # ])
+    transform = AutoImageProcessor.from_pretrained("microsoft/resnet-50")
 
     # 实例化数据集
     data_dir = "/mnt/bd/fazzie-models/data/WBC_10/data/"  
