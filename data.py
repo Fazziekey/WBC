@@ -61,7 +61,7 @@ class CustomImageDataset(Dataset):
 if __name__ == '__main__':
     # 定义图像的转换方法
     transform = transforms.Compose([
-        transforms.Resize((128, 128)),  # 或者您需要的任何其他尺寸
+        transforms.Resize((128, 128)),  # The Image will transfer to 3*128*128
         transforms.ToTensor(),
     ])
 
@@ -71,7 +71,7 @@ if __name__ == '__main__':
     dataset = CustomImageDataset(data_dir=data_dir, mask_dir=mask_dir, transform=transform)
 
     # 创建 DataLoader
-    data_loader = DataLoader(dataset, batch_size=32, shuffle=True)  # 您可以根据需要修改 batch_size
+    data_loader = DataLoader(dataset, batch_size=32, shuffle=True)
 
     # 使用 DataLoader 迭代数据
     for images, labels in data_loader:
