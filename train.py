@@ -32,6 +32,8 @@ model = ResNetForImageClassification.from_pretrained("microsoft/resnet-50", num_
 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
+scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=len(train_data_loader), eta_min=0,
+                                                        last_epoch=-1)
 
 # Init device
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -57,6 +59,7 @@ for epoch in range(num_epochs):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+        scheduler.step()
 
         train_loss += loss.item() * images.size(0)
 
