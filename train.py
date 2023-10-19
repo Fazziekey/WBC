@@ -28,7 +28,7 @@ test_dataset = WBCImageDataset(data_dir=test_data_dir, transform=transform, use_
 test_data_loader = DataLoader(test_dataset, batch_size=32, shuffle=True)
 
 # Init model and loss function, optimizar
-model = ResNetForImageClassification.from_pretrained("microsoft/resnet-50")
+model = ResNetForImageClassification.from_pretrained("microsoft/resnet-50", num_labels=5)
 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)

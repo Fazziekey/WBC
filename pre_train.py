@@ -3,7 +3,7 @@ import time
 import torch
 from torch import nn, optim
 from torch.utils.data import DataLoader
-from transformers import AutoImageProcessor, ResNetForImageClassification
+from transformers import AutoImageProcessor, ResNetForImageClassification, ResNetModel
 import wandb
 from tqdm import tqdm
 
@@ -28,17 +28,19 @@ test_dataset = pRCCImageDataset(data_dir=test_data_dir, transform=transform, use
 test_data_loader = DataLoader(test_dataset, batch_size=32, shuffle=True)
 
 # Init model and loss function, optimizar
-model = ResNetForImageClassification.from_pretrained("microsoft/resnet-50")
+model = ResNetModel.from_pretrained("microsoft/resnet-50")
 
-criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=0.001)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+
+scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=len(train_data_loader), eta_min=0,
+                                                        last_epoch=-1)
 
 # Init device
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 model.to(device)
 
 # Train
-num_epochs = 10 
+num_epochs = 5
 
 wandb.init(project="WBC", name= train_data + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + 'use_mask' if use_mask else "")
 wandb.watch(model) 
