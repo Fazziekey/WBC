@@ -7,6 +7,7 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision.transforms import transforms
 from PIL import Image
 from transformers import AutoImageProcessor
+from tqdm import tqdm
 
 np.random.seed(0)
 
@@ -56,36 +57,46 @@ class WBCImageDataset(Dataset):
         masked_image = Image.composite(image, Image.new("RGB", mask.size, "black"), binary_mask)
         return masked_image
 
+
 class SimclrImageDataset(Dataset):
-    def __init__(self, data_dir, mask_dir=None, use_mask=True):
+    def __init__(self, data_dir, mask_dir=None, use_mask=True, size=128):
         self.data_dir = data_dir
         self.mask_dir = mask_dir
-        self.transform = transform
         self.use_mask = use_mask
 
         self.transform=ContrastiveLearningViewGenerator(
-                            self.get_simclr_pipeline_transform(32),
+                            self.get_simclr_pipeline_transform(size=size),
                             n_views=2
                         )
 
         self.samples = []
-        for cls in self.class_to_index:
-            class_dir = os.path.join(data_dir, cls)
-            if os.path.exists(class_dir):
-                for file_name in os.listdir(class_dir):
+
+        if isinstance(data_dir, list):
+            for dir in data_dir:
+                if os.path.exists(dir):
+                    for file_name in os.listdir(dir):
+                        if file_name.endswith(".jpg"):
+                            self.samples.append(os.path.join(dir, file_name))
+                else:
+                    print("data_dir path Error!!!!!")
+        else:
+            if os.path.exists(data_dir):
+                for file_name in os.listdir(data_dir):
                     if file_name.endswith(".jpg"):
-                        self.samples.append(os.path.join(class_dir, file_name))
+                        self.samples.append(os.path.join(data_dir, file_name))
+            else:
+                print("data_dir path Error!!!!!")
 
     def __len__(self):
         return len(self.samples)
 
     def __getitem__(self, idx):
-        img_path, label = self.samples[idx]
+        img_path = self.samples[idx]
         image = Image.open(img_path).convert("RGB")
 
         if self.use_mask:
             mask_name = os.path.splitext(os.path.basename(img_path))[0] + ".jpg"
-            mask_path = os.path.join(self.mask_dir, list(self.class_to_index.keys())[label], mask_name)
+            mask_path = os.path.join(self.mask_dir, mask_name)
 
             if os.path.exists(mask_path):
                 mask = Image.open(mask_path).convert("L")  
@@ -93,11 +104,11 @@ class SimclrImageDataset(Dataset):
             else:
                 mask = None  
 
-
         images = self.transform(image)
 
         return images
-
+        
+    @staticmethod
     def get_simclr_pipeline_transform(size, s=1):
         """Return a set of data augmentation transformations as described in the SimCLR paper."""
         color_jitter = transforms.ColorJitter(0.8 * s, 0.8 * s, 0.8 * s, 0.2 * s)
@@ -171,18 +182,41 @@ if __name__ == '__main__':
     #     transforms.Resize((128, 128)),  # The Image will transfer to 3*128*128
     #     transforms.ToTensor(),
     # ])
-    transform = AutoImageProcessor.from_pretrained("microsoft/resnet-50")
 
-    data_dir = "/mnt/bd/fazzie-models/data/WBC_10/data/"  
-    mask_dir = "/mnt/bd/fazzie-models/data/WBC_10/mask/"  
-    dataset = WBCImageDataset(data_dir=data_dir, mask_dir=mask_dir, transform=transform)
+    # transform = AutoImageProcessor.from_pretrained("microsoft/resnet-50")
 
-    # Create DataLoader
+    # data_dir = "/mnt/bd/fazzie-models/data/WBC_10/data/"  
+    # mask_dir = "/mnt/bd/fazzie-models/data/WBC_10/mask/"  
+    # dataset = WBCImageDataset(data_dir=data_dir, mask_dir=mask_dir, transform=transform)
+
+    # # Create DataLoader
+    # data_loader = DataLoader(dataset, batch_size=32, shuffle=True)
+
+    # for images, labels in data_loader:
+    #     print(images)
+    #     print(images.shape)
+    #     print(labels)
+
+    #     break
+
+    data_dir = "/mnt/bd/fazzie-models/data/pRCC_nolabel" 
+    dataset = SimclrImageDataset(data_dir=data_dir, mask_dir=None, use_mask=False) 
     data_loader = DataLoader(dataset, batch_size=32, shuffle=True)
 
-    for images, labels in data_loader:
-        print(images)
-        print(images.shape)
-        print(labels)
+    data_loader = torch.utils.data.DataLoader(
+        dataset, batch_size=32, shuffle=True,
+        num_workers=12, pin_memory=True, drop_last=True)
 
+    images = dataset[0]
+    # print(images)
+    print(len(images))
+    print(images[0].shape)
+    print(images[1].shape)
+
+
+    for images in tqdm(data_loader):
+
+        print(len(images))
+        images = torch.cat(images, dim=0)
+        print(images.shape)
         break

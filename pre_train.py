@@ -12,19 +12,25 @@ from data import SimclrImageDataset
 from loss import info_nce_loss
 
 # Creat Train DataLoader
-use_mask = True
+use_mask = False
+batch_size = 256
 
-train_data_dir = "/mnt/bd/fazzie-models/data/pRCC_nolabel"  
+train_data_dir = [
+    "/mnt/bd/fazzie-models/data/pRCC_nolabel",  
+    "/mnt/bd/fazzie-models/data/CAM16_100cls_10mask/train/data/normal/",
+    "/mnt/bd/fazzie-models/data/CAM16_100cls_10mask/train/data/tumor/",
+]
+
 train_mask_dir = None
 train_dataset = SimclrImageDataset(data_dir=train_data_dir, mask_dir=train_mask_dir, use_mask=use_mask)
 
-train_data_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+train_data_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
 
 # Init model and loss function, optimizar
 model = ResNetSimCLR(base_model='resnet50', out_dim=128)
 
-optimizer = optim.Adam(model.parameters(), lr=0.0001)
+optimizer = optim.Adam(model.parameters(), lr=0.0001, weight_decay=1e-4)
 criterion = nn.CrossEntropyLoss()
 scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=len(train_data_loader), eta_min=0,
                                                         last_epoch=-1)
@@ -34,10 +40,10 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 model.to(device)
 
 # Train
-num_epochs = 5
+num_epochs = 50
 
-wandb.init(project="SimCLR", name = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
-wandb.watch(model) 
+# wandb.init(project="SimCLR", name = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+# wandb.watch(model) 
 
 step_bar = tqdm(range(num_epochs * len(train_data_loader)), desc=f'steps')
 
@@ -45,11 +51,11 @@ for epoch in range(num_epochs):
     model.train()  
     train_loss = 0.0
 
-    for images, labels in train_data_loader:
+    for images in train_data_loader:
         images = torch.cat(images, dim=0).to(device)
 
         features = model(images)
-        logits, labels = info_nce_loss(features)
+        logits, labels = info_nce_loss(features, device, batch_size=batch_size)
         loss = criterion(logits, labels)
 
         optimizer.zero_grad()
@@ -63,13 +69,15 @@ for epoch in range(num_epochs):
 
     epoch_loss = train_loss / len(train_data_loader.dataset)
 
-    wandb.log({
-        "Train Loss": epoch_loss,
-    })
-    print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {epoch_loss:.4f}")
+    # wandb.log({
+    #     "Train Loss": epoch_loss,
+    # })
+    # print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {epoch_loss:.4f}")
 
 print('Finished Training')
 
+filename = "checkpoint.pth"
 
-model.save_pretrained(path='output')
+torch.save(model.state_dict(), filename)
+
 
