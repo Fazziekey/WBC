@@ -46,7 +46,10 @@ class WBCImageDataset(Dataset):
                 mask = None  
 
         if self.transform:
-            image = self.transform(image, return_tensors="pt")["pixel_values"][0]
+
+            image = self.transform(image)
+
+            #     image = self.transform(image, return_tensors="pt")["pixel_values"][0]
 
         label = torch.tensor(label, dtype=torch.int64) 
 

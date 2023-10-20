@@ -22,7 +22,7 @@ train_data_dir = [
 ]
 
 train_mask_dir = None
-train_dataset = SimclrImageDataset(data_dir=train_data_dir, mask_dir=train_mask_dir, use_mask=use_mask, size=224)
+train_dataset = SimclrImageDataset(data_dir=train_data_dir, mask_dir=train_mask_dir, use_mask=use_mask, size=128)
 print(f"train_dataset numbers {len(train_dataset)}")
 
 train_data_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
@@ -31,7 +31,7 @@ train_data_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=Tru
 # Init model and loss function, optimizar
 model = ResNetSimCLR(base_model='resnet50', out_dim=128)
 
-optimizer = optim.Adam(model.parameters(), lr=1e-5, weight_decay=1e-4)
+optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4)
 criterion = nn.CrossEntropyLoss()
 scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=len(train_data_loader), eta_min=0,
                                                         last_epoch=-1)
@@ -41,7 +41,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 model.to(device)
 
 # Train
-num_epochs = 50
+num_epochs = 200
 
 # wandb.init(project="SimCLR", name = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
 # wandb.watch(model) 
