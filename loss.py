@@ -10,11 +10,14 @@ def info_nce_loss(features, device, temperature=0.07, batch_size=32, n_views=2):
 
     features = F.normalize(features, dim=1)
 
-    print(f"batch_size {batch_size}")
-    print(f"n_views {n_views}")
-    print(f"features {features.shape}")
+    # print(f"batch_size {batch_size}")
+    # print(f"n_views {n_views}")
+    # print(f"features {features.shape}")
 
     similarity_matrix = torch.matmul(features, features.T)
+
+    # print(f"similarity_matrix.shape {similarity_matrix.shape}")
+    # print(f"n_views * batch_size {n_views * batch_size}")
     assert similarity_matrix.shape == (
         n_views * batch_size, n_views * batch_size)
     assert similarity_matrix.shape == labels.shape
