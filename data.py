@@ -188,8 +188,8 @@ if __name__ == '__main__':
 
     # transform = AutoImageProcessor.from_pretrained("microsoft/resnet-50")
 
-    # data_dir = "/mnt/bd/fazzie-models/data/WBC_10/data/"  
-    # mask_dir = "/mnt/bd/fazzie-models/data/WBC_10/mask/"  
+    # data_dir = "path/to/WBC_10/data/"  
+    # mask_dir = "path/to/WBC_10/mask/"  
     # dataset = WBCImageDataset(data_dir=data_dir, mask_dir=mask_dir, transform=transform)
 
     # # Create DataLoader
@@ -202,7 +202,7 @@ if __name__ == '__main__':
 
     #     break
 
-    data_dir = "/mnt/bd/fazzie-models/data/pRCC_nolabel" 
+    data_dir = "path/to/pRCC_nolabel" 
     dataset = SimclrImageDataset(data_dir=data_dir, mask_dir=None, use_mask=False) 
     data_loader = DataLoader(dataset, batch_size=32, shuffle=True)
 

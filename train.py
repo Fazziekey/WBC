@@ -22,17 +22,17 @@ transform = transforms.Compose([
 ])
 
 # Creat Train DataLoader
-use_mask = True
+use_mask = True    
 train_data = 'WBC_100'
 
-train_data_dir = "/mnt/bd/fazzie-models/data/WBC_100/train/data/"  
-train_mask_dir = "/mnt/bd/fazzie-models/data/WBC_100/train/mask/"  
+train_data_dir = f"path/to/{train_data}/train/data/"  
+train_mask_dir = f"path/to/{train_data}/train/mask/"  
 train_dataset = WBCImageDataset(data_dir=train_data_dir, mask_dir=train_mask_dir, transform=transform, use_mask=use_mask)
 
 train_data_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 
 # Creat Test DataLoader
-test_data_dir = "/mnt/bd/fazzie-models/data/WBC_100/val/"  
+test_data_dir = "path/to/WBC_100/val/"  
 test_dataset = WBCImageDataset(data_dir=test_data_dir, transform=transform, use_mask=False)
 
 test_data_loader = DataLoader(test_dataset, batch_size=32, shuffle=True)
@@ -41,7 +41,9 @@ test_data_loader = DataLoader(test_dataset, batch_size=32, shuffle=True)
 
 # model = ResNetForImageClassification.from_pretrained("microsoft/resnet-50", num_labels=5)
 model = torchvision.models.resnet50(pretrained=False, num_classes=5).to(device)
-state_dict = torch.load('checkpoint.pth', map_location=device)
+
+ckpt = "epoch200-checkpoint.pth"
+state_dict = torch.load(ckpt, map_location=device)
 # state_dict = checkpoint['state_dict']
 
 for k in list(state_dict.keys()):
@@ -73,8 +75,8 @@ scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=len(train_data
 # Train
 num_epochs = 10 
 
-# wandb.init(project="WBC", name= train_data + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + 'use_mask' if use_mask else "")
-# wandb.watch(model) 
+wandb.init(project="WBC", name= train_data + '_use_mask' if use_mask else "")
+wandb.watch(model) 
 
 step_bar = tqdm(range(num_epochs * len(train_data_loader)), desc=f'steps')
 for epoch in range(num_epochs):
@@ -94,14 +96,17 @@ for epoch in range(num_epochs):
 
         train_loss += loss.item() * images.size(0)
 
+        wandb.log({
+            "Loss": loss.item(),
+        })
         step_bar.set_description('loss: %3.3f' % loss.item())
         step_bar.update()
 
     epoch_loss = train_loss / len(train_data_loader.dataset)
 
-    # wandb.log({
-    #     "Train Loss": epoch_loss,
-    # })
+    wandb.log({
+        "Train Loss": epoch_loss,
+    })
     print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {epoch_loss:.4f}")
 
 print('Finished Training')
@@ -120,13 +125,17 @@ with torch.no_grad():
         total += labels.size(0)
         correct += (predicted == labels).sum().item()
         step_bar.update()
-        
+
 accuracy = 100 * correct / total
+
+wandb.log({
+    "accuracy": accuracy,
+})
 print(f'Accuracy of the network on the test images: {accuracy}%')
 
 # Save model
 
-filename = f"{train_data}-mask-checkpoint.pth" if use_mask else f"{train_data}-checkpoint.pth"
+filename = f"{train_data}-epoch{num_epochs}-mask-checkpoint.pth" if use_mask else f"{train_data}-epoch{num_epochs}-checkpoint.pth"
 
 torch.save(model.state_dict(), filename)
 

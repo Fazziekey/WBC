@@ -169,3 +169,6 @@ lm_cache/
 
 # output
 output/
+
+# ckpt
+*pth

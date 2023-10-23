@@ -16,9 +16,9 @@ use_mask = False
 batch_size = 128
 
 train_data_dir = [
-    "/mnt/bd/fazzie-models/data/pRCC_nolabel",  
-    "/mnt/bd/fazzie-models/data/CAM16_100cls_10mask/train/data/normal/",
-    "/mnt/bd/fazzie-models/data/CAM16_100cls_10mask/train/data/tumor/",
+    "path/to/pRCC_nolabel",  
+    "path/to/CAM16_100cls_10mask/train/data/normal/",
+    "path/to//CAM16_100cls_10mask/train/data/tumor/",
 ]
 
 train_mask_dir = None
@@ -78,7 +78,7 @@ for epoch in range(num_epochs):
 
 print('Finished Training')
 
-filename = "checkpoint.pth"
+filename = f"epoch{num_epochs}-checkpoint.pth"
 
 torch.save(model.state_dict(), filename)
 
